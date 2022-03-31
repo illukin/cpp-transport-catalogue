@@ -22,49 +22,52 @@ ParseQueryType(const std::string_view line) {
   return {query_type, data};
 }
 
-void PrintBusInfo(const TransportCatalogue &cat, std::string_view bus_name) {
+void PrintBusInfo(const TransportCatalogue &cat, std::string_view bus_name,
+  std::ostream &out) {
   using namespace std::string_view_literals;
 
   Bus *bus = cat.GetBus(bus_name);
-  std::cout << "Bus "sv << bus_name << ": "sv;
+  out << "Bus "sv << bus_name << ": "sv;
 
   if (bus == nullptr) {
-    std::cout << "not found"sv << std::endl;
+    out << "not found"sv << std::endl;
   } else {
     auto info = cat.GetBusInfo(bus);
-    std::cout << info.total_stops << " stops on route, "sv
-              << info.unique_stops << " unique stops, "sv
-              << std::setprecision(6)
-              << info.fact_route_length << " route length, "sv
-              << info.fact_route_length / info.line_route_length
-              << " curvature"sv << std::endl;
+    out << info.total_stops << " stops on route, "sv
+      << info.unique_stops << " unique stops, "sv
+      << std::setprecision(6)
+      << info.fact_route_length << " route length, "sv
+      << info.fact_route_length / info.line_route_length
+      << " curvature"sv << std::endl;
   }
 }
 
-void PrintStopInfo(const TransportCatalogue &cat, std::string_view stop_name) {
+void PrintStopInfo(const TransportCatalogue &cat, std::string_view stop_name,
+  std::ostream &out) {
   using namespace std::string_view_literals;
 
-  std::cout << "Stop "sv << stop_name << ": "sv;
+  out << "Stop "sv << stop_name << ": "sv;
 
   if (cat.GetStop(stop_name) == nullptr) {
-    std::cout << "not found"sv << std::endl;
+    out << "not found"sv << std::endl;
     return;
   }
 
   const auto &buses = cat.GetBusesByStop(stop_name);
   if (buses.empty()) {
-    std::cout << "no buses"sv << std::endl;
+    out << "no buses"sv << std::endl;
     return;
   }
 
-  std::cout << "buses"sv;
+  out << "buses"sv;
   for (const auto &bus : buses) {
-    std::cout << " "sv << bus->name;
+    out << " "sv << bus->name;
   }
-  std::cout << std::endl;
+  out << std::endl;
 }
 
-void ParseAndPrint(const TransportCatalogue &cat, std::string_view line) {
+void ParseAndPrint(const TransportCatalogue &cat, std::string_view line,
+  std::ostream &out) {
   using namespace std::string_view_literals;
   auto [query_type, query_data] = ParseQueryType(line);
 
@@ -74,16 +77,16 @@ void ParseAndPrint(const TransportCatalogue &cat, std::string_view line) {
   }
 
   if (query_type == "Bus"sv) {
-    PrintBusInfo(cat, query_data);
+    PrintBusInfo(cat, query_data, out);
   } else if (query_type == "Stop"sv) {
-    PrintStopInfo(cat, query_data);
+    PrintStopInfo(cat, query_data, out);
   }
 }
 
 void ProcessQueries(const TransportCatalogue &cat,
-  std::vector<std::string> &data) {
+  std::vector<std::string> &data, std::ostream &out) {
   for (const std::string_view line : data) {
-    ParseAndPrint(cat, line);
+    ParseAndPrint(cat, line, out);
   }
 }
 

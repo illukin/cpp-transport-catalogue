@@ -12,8 +12,7 @@ namespace tc {
 
 struct Stop {
   Stop() = default;
-  Stop(std::string stop_name, double latitude, double longitude)
-    : name(std::move(stop_name)), lat(latitude), lng(longitude) {};
+  Stop(std::string stop_name, double latitude, double longitude);
 
   std::string name;
   double lat{};
@@ -24,22 +23,15 @@ using Route = std::vector<Stop *>;
 
 struct Bus {
   Bus() = default;
-  Bus(std::string bus_name, std::vector<Stop *> bus_stops)
-    : name(std::move(bus_name)), stops(std::move(bus_stops)) {};
-
-  bool operator<(Bus &other) {
-    return std::lexicographical_compare(name.begin(), name.end(),
-      other.name.begin(), other.name.end());
-  }
+  Bus(std::string bus_name, std::vector<Stop *> bus_stops);
+  bool operator<(Bus &other);
 
   std::string name;
   Route stops;
 };
 
 struct BusPtrComparator {
-  bool operator() (Bus *lhs, Bus *rhs) const {
-    return *lhs < *rhs;
-  }
+  bool operator()(Bus *lhs, Bus *rhs) const;
 };
 
 struct BusInfo {
@@ -53,30 +45,23 @@ using Buses = std::set<Bus *, BusPtrComparator>;
 
 struct Hasher {
   static const size_t salt = 77;
-
-  static auto CountStopHash(const Stop *stop) {
-    return std::hash<std::string>{}(stop->name)
-      + std::hash<double>{}(stop->lat) * salt
-      + std::hash<double>{}(stop->lng) * salt * salt;
-  }
-
-  size_t operator()(const std::pair<Stop *, Stop *> &stops) const {
-    return CountStopHash(stops.first) * salt
-      + CountStopHash(stops.second);
-  }
+  static size_t CountStopHash(const Stop *stop);
+  static size_t CountRouteHash(const Route *route);
+  size_t operator()(const std::pair<Stop *, Stop *> &stops) const;
+  size_t operator()(const Bus *bus) const;
 };
 
 class TransportCatalogue {
 public:
-  void AddStop(Stop);
-  void AddRoute(Bus);
-  void SetDistance(std::pair<Stop *, Stop *> &, int);
+  void AddStop(Stop stop);
+  void AddRoute(Bus bus);
+  void SetDistance(std::pair<Stop *, Stop *> &stops, int distance);
 
-  Stop *GetStop(std::string_view) const;
-  Bus *GetBus(std::string_view) const;
-  BusInfo GetBusInfo(Bus *) const;
-  const Buses &GetBusesByStop(std::string_view) const;
-  int GetDistance(Stop *, Stop *) const;
+  Stop *GetStop(std::string_view name) const;
+  Bus *GetBus(std::string_view name) const;
+  BusInfo GetBusInfo(Bus *bus) const;
+  const Buses &GetBusesByStop(std::string_view name) const;
+  int GetDistance(Stop *a, Stop *b) const;
 
 private:
   std::list<Stop> stops_;
@@ -84,6 +69,7 @@ private:
   std::unordered_map<std::string_view, Stop *> name_to_stop_;
   std::unordered_map<std::string_view, Bus *> name_to_bus_;
   std::unordered_map<std::string_view, Buses> stop_to_buses_;
+  std::unordered_map<Bus *, BusInfo, Hasher> bus_to_info_;
   std::unordered_map<std::pair<Stop *, Stop *>, int, Hasher> distances_;
 };
 

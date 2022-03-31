@@ -6,28 +6,24 @@
 #include <string>
 #include <vector>
 
-namespace tc::filler {
+namespace tc {
 
-struct Query {
-  std::string type;
-  std::string name;
-  std::string data;
-};
+namespace reader {
 
-std::string ReadLine() {
+std::string ReadLine(std::istream &in) {
   std::string s;
-  std::getline(std::cin, s);
+  std::getline(in, s);
   return s;
 }
 
-size_t ReadLineWithNumber() {
+size_t ReadLineWithNumber(std::istream &in) {
   size_t result;
-  std::cin >> result;
-  ReadLine();
+  in >> result;
+  ReadLine(in);
   return result;
 }
 
-std::vector<std::string> ReadLines(size_t count) {
+std::vector<std::string> ReadLines(size_t count, std::istream &in) {
   std::vector<std::string> result;
   result.reserve(count);
 
@@ -35,11 +31,21 @@ std::vector<std::string> ReadLines(size_t count) {
     // Сохранение всех запросов в векторе для последующего разбора необходимо
     // для того, чтобы корректно обработать случай, когда в маршруте фигурирует
     // остановка, объявленная после объявления этого маршрута.
-    result.push_back(ReadLine());
+    result.push_back(ReadLine(in));
   }
 
   return result;
 }
+
+} // namespace reader
+
+namespace filler {
+
+struct Query {
+  std::string type;
+  std::string name;
+  std::string data;
+};
 
 Query ParseData(const std::string &line) {
   Query query;
@@ -192,4 +198,6 @@ void FillDB(TransportCatalogue &cat, std::vector<std::string> &data) {
   }
 }
 
-} // namespace tc::filler
+} // namespace filler
+
+} // namespace tc
