@@ -1,5 +1,7 @@
 #pragma once
 
+#include "domain.h"
+
 #include <list>
 #include <set>
 #include <string>
@@ -9,26 +11,6 @@
 #include <utility>
 
 namespace tc {
-
-struct Stop {
-  Stop() = default;
-  Stop(std::string stop_name, double latitude, double longitude);
-
-  std::string name;
-  double lat{};
-  double lng{};
-};
-
-using Route = std::vector<Stop *>;
-
-struct Bus {
-  Bus() = default;
-  Bus(std::string bus_name, std::vector<Stop *> bus_stops);
-  bool operator<(Bus &other);
-
-  std::string name;
-  Route stops;
-};
 
 struct BusPtrComparator {
   bool operator()(Bus *lhs, Bus *rhs) const;
@@ -62,6 +44,7 @@ public:
   BusInfo GetBusInfo(Bus *bus) const;
   const Buses &GetBusesByStop(std::string_view name) const;
   int GetDistance(Stop *a, Stop *b) const;
+  const std::list<Bus> &GetBuses() const;
 
 private:
   std::list<Stop> stops_;

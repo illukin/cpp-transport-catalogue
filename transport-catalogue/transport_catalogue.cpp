@@ -5,17 +5,6 @@
 
 namespace tc {
 
-Stop::Stop(std::string stop_name, double latitude, double longitude)
-  : name(std::move(stop_name)), lat(latitude), lng(longitude) {}
-
-Bus::Bus(std::string bus_name, std::vector<Stop *> bus_stops)
-  : name(std::move(bus_name)), stops(std::move(bus_stops)) {}
-
-bool Bus::operator<(Bus &other) {
-  return std::lexicographical_compare(name.begin(), name.end(),
-    other.name.begin(), other.name.end());
-}
-
 bool BusPtrComparator::operator()(Bus *lhs, Bus *rhs) const {
   return *lhs < *rhs;
 }
@@ -55,7 +44,8 @@ void TransportCatalogue::AddStop(Stop stop) {
 
 void TransportCatalogue::AddRoute(Bus bus) {
   // Помещение оригинала автобуса в список (постоянное хранилище)
-  auto &ref = buses_.emplace_back(std::move(bus.name), bus.stops);
+  auto &ref = buses_.emplace_back(std::move(bus.name), bus.stops,
+    bus.final_stops);
 
   // Добавление текущего автобуса ко всем остановкам, через которые он проезжает
   for (const auto stop : bus.stops) {
@@ -73,14 +63,14 @@ void TransportCatalogue::AddRoute(Bus bus) {
   std::unordered_set<Stop *> unique_stops(route.begin(), route.end());
 
   // Расчёт длины маршрута по координатам
-  for (auto i = 0; i < route.size() - 1; ++i) {
+  for (size_t i = 0; i < route.size() - 1; ++i) {
     geo::Coordinates first = {(*route[i]).lat, (*route[i]).lng};
     geo::Coordinates second = {(*route[i + 1]).lat, (*route[i + 1]).lng};
     line_route_length += ComputeDistance(first, second);
   }
 
   // Рассчёт длины маршрута по заданным пользователем значениям
-  for (auto i = 0; i < route.size() - 1; ++i) {
+  for (size_t i = 0; i < route.size() - 1; ++i) {
     fact_route_length += GetDistance(route[i], route[i + 1]);
   }
 
@@ -145,6 +135,10 @@ const Buses &TransportCatalogue::GetBusesByStop(std::string_view name) const {
   }
 
   return empty;
+}
+
+const std::list<Bus> &TransportCatalogue::GetBuses() const {
+  return buses_;
 }
 
 } // namespace tc
