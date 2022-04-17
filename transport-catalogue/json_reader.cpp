@@ -1,5 +1,5 @@
 #include "json_reader.h"
-#include "json.h"
+#include "request_handler.h"
 #include "transport_catalogue.h"
 
 #include <map>
@@ -94,20 +94,19 @@ void FillDB(TransportCatalogue &cat, json::Array &data)
 
 namespace printer {
 
-json::Dict PrintStops(const TransportCatalogue &cat, std::string &name) {
+json::Dict PrintStops(const RequestHandler &handler, std::string &name) {
   using namespace std::string_literals;
 
   json::Dict result;
 
-  if (cat.GetStop(name) == nullptr) {
+  const auto buses = handler.GetBusesByStop(name);
+  if (buses == nullptr) {
     result["error_message"] = {"not found"s};
     return result;
   }
 
-  const auto &buses = cat.GetBusesByStop(name);
   json::Array buses_array;
-
-  for (const auto &bus : buses) {
+  for (const auto &bus : *buses) {
     buses_array.push_back(bus->name);
   }
   result["buses"] = buses_array;
@@ -115,44 +114,37 @@ json::Dict PrintStops(const TransportCatalogue &cat, std::string &name) {
   return result;
 }
 
-json::Dict PrintBuses(const TransportCatalogue &cat, std::string &name) {
+json::Dict PrintBuses(const RequestHandler &handler, std::string &name) {
   using namespace std::string_literals;
 
   json::Dict result;
-  Bus *bus = cat.GetBus(name);
 
-  if (bus == nullptr) {
+  const auto info = handler.GetBusInfo(name);
+
+  if (info == std::nullopt) {
     result["error_message"] = {"not found"s};
     return result;
   }
 
-  auto info = cat.GetBusInfo(bus);
-  result["curvature"] = info.fact_route_length / info.line_route_length;
-  result["route_length"] = info.fact_route_length;
-  result["stop_count"] = static_cast<int>(info.total_stops);
-  result["unique_stop_count"] = static_cast<int>(info.unique_stops);
+  result["curvature"] = info->fact_route_length / info->line_route_length;
+  result["route_length"] = info->fact_route_length;
+  result["stop_count"] = static_cast<int>(info->total_stops);
+  result["unique_stop_count"] = static_cast<int>(info->unique_stops);
 
   return result;
 }
 
-json::Dict PrintMap(const TransportCatalogue &cat,
-    renderer::MapRenderer &renderer) {
-  using namespace std::string_view_literals;
+json::Dict PrintMap(const RequestHandler &handler) {
+  using namespace std::string_literals;
 
-  json::Dict result;
-  svg::Document doc;
-  auto buses = cat.GetBuses();
   std::stringstream render;
+  handler.RenderMap().Render(render);
 
-  renderer.RenderMap(buses.begin(), buses.end()).Draw(doc);
-  doc.Render(render);
-  result["map"] = render.str();
-
-  return result;
+  return {{"map"s, render.str()}};
 }
 
-void ProcessQueries(const TransportCatalogue &cat,
-    json::Array &data, renderer::MapRenderer &renderer, std::ostream &out) {
+void ProcessQueries(json::Array &data, RequestHandler &handler,
+    std::ostream &out) {
   using namespace std::string_literals;
   using namespace std::string_view_literals;
 
@@ -168,12 +160,12 @@ void ProcessQueries(const TransportCatalogue &cat,
 
     if (type_stop == "Stop"s) {
       name = map_req.at("name"s).AsString();
-      response.merge(PrintStops(cat, name));
+      response.merge(PrintStops(handler, name));
     } else if (type_stop == "Bus"s) {
       name = map_req.at("name"s).AsString();
-      response.merge(PrintBuses(cat, name));
+      response.merge(PrintBuses(handler, name));
     } else if (type_stop == "Map"s) {
-      response.merge(PrintMap(cat, renderer));
+      response.merge(PrintMap(handler));
     }
 
     output_json.push_back(response);

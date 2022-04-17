@@ -9,6 +9,8 @@
 
 namespace tc {
 
+class RequestHandler;
+
 namespace filler {
 
 void FillDB(TransportCatalogue &cat, json::Array &data);
@@ -17,8 +19,8 @@ void FillDB(TransportCatalogue &cat, json::Array &data);
 
 namespace printer {
 
-void ProcessQueries(const TransportCatalogue &cat, json::Array &data,
-  renderer::MapRenderer &renderer, std::ostream &out);
+void ProcessQueries(json::Array &data, RequestHandler &handler,
+  std::ostream &out);
 
 } // namespace printer
 

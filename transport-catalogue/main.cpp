@@ -1,6 +1,6 @@
 #include "json.h"
 #include "json_reader.h"
-#include "map_renderer.h"
+#include "request_handler.h"
 #include "transport_catalogue.h"
 
 #include <iostream>
@@ -30,9 +30,10 @@ int main () {
   }
 
   // Обработка запросов и печать результатов
+  tc::RequestHandler handler(cat, renderer);
   if (doc.find(stat_req) != doc.end()) {
     json = doc.at(stat_req).AsArray();
-    tc::printer::ProcessQueries(cat, json, renderer, std::cout);
+    tc::printer::ProcessQueries(json, handler, std::cout);
   }
 
   return 0;

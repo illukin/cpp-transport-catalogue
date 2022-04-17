@@ -20,16 +20,9 @@ public:
   using runtime_error::runtime_error;
 };
 
-class Node {
+class Node : NodeType {
 public:
-  Node() = default;
-  Node(std::nullptr_t);
-  Node(Array array);
-  Node(Dict map);
-  Node(bool value);
-  Node(int value);
-  Node(double value);
-  Node(std::string value);
+  using NodeType::variant;
 
   [[nodiscard]] bool IsNull() const;
   [[nodiscard]] bool IsArray() const;
@@ -47,13 +40,10 @@ public:
   double AsDouble() const;
   const std::string &AsString() const;
 
-  const NodeType &GetNodeType() const;
+  const variant &GetNodeType() const;
 
   bool operator==(const Node &rhs) const;
   bool operator!=(const Node &rhs) const;
-
-private:
-  NodeType node_type_;
 };
 
 class Document {
