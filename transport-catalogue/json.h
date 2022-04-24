@@ -24,6 +24,8 @@ class Node : NodeType {
 public:
   using NodeType::variant;
 
+  Node(variant value);
+
   [[nodiscard]] bool IsNull() const;
   [[nodiscard]] bool IsArray() const;
   [[nodiscard]] bool IsMap() const;
@@ -41,6 +43,7 @@ public:
   const std::string &AsString() const;
 
   const variant &GetNodeType() const;
+  variant &GetNodeType();
 
   bool operator==(const Node &rhs) const;
   bool operator!=(const Node &rhs) const;

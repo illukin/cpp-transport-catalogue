@@ -298,6 +298,8 @@ void PrintNode(const Node& node, std::ostream &output) {
 
 }  // namespace
 
+Node::Node(variant value) : variant(std::move(value)) {}
+
 bool Node::operator==(const Node &rhs) const {
   return GetNodeType() == rhs.GetNodeType();
 }
@@ -376,6 +378,10 @@ const std::string &Node::AsString() const {
 }
 
 const Node::variant &Node::GetNodeType() const {
+  return *this;
+}
+
+Node::variant &Node::GetNodeType() {
   return *this;
 }
 

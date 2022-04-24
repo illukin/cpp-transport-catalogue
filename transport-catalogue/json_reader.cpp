@@ -1,4 +1,6 @@
 #include "json_reader.h"
+
+#include "json_builder.h"
 #include "request_handler.h"
 #include "transport_catalogue.h"
 
@@ -10,7 +12,7 @@ namespace tc {
 namespace filler {
 
 void AddStopsToDB(TransportCatalogue &cat, json::Array &data,
-    std::map<std::string, json::Dict> &distances) {
+  std::map<std::string, json::Dict> &distances) {
   using namespace std::string_literals;
 
   for (const auto &req : data) {
@@ -29,7 +31,7 @@ void AddStopsToDB(TransportCatalogue &cat, json::Array &data,
 }
 
 void AddDistancesToDB(TransportCatalogue &cat,
-    std::map<std::string, json::Dict> &distances) {
+  std::map<std::string, json::Dict> &distances) {
   for (const auto &[stop_a_name, map_distances] : distances) {
     for (const auto &[stop_b_name, dist] : map_distances) {
       auto a = cat.GetStop(stop_a_name);
@@ -94,84 +96,82 @@ void FillDB(TransportCatalogue &cat, json::Array &data)
 
 namespace printer {
 
-json::Dict PrintStops(const RequestHandler &handler, std::string &name) {
+void PrintStops(const RequestHandler &handler, std::string &name,
+  json::Builder &builder) {
   using namespace std::string_literals;
-
-  json::Dict result;
 
   const auto buses = handler.GetBusesByStop(name);
   if (buses == nullptr) {
-    result["error_message"] = {"not found"s};
-    return result;
+    builder.Key("error_message"s).Value("not found"s);
+    return;
   }
 
-  json::Array buses_array;
+  builder.Key("buses").StartArray();
   for (const auto &bus : *buses) {
-    buses_array.push_back(bus->name);
+    builder.Value(bus->name);
   }
-  result["buses"] = buses_array;
-
-  return result;
+  builder.EndArray();
 }
 
-json::Dict PrintBuses(const RequestHandler &handler, std::string &name) {
+void PrintBuses(const RequestHandler &handler, std::string &name,
+  json::Builder &builder) {
   using namespace std::string_literals;
-
-  json::Dict result;
 
   const auto info = handler.GetBusInfo(name);
 
   if (info == std::nullopt) {
-    result["error_message"] = {"not found"s};
-    return result;
+    builder.Key("error_message"s).Value("not found"s);
+    return;
   }
 
-  result["curvature"] = info->fact_route_length / info->line_route_length;
-  result["route_length"] = info->fact_route_length;
-  result["stop_count"] = static_cast<int>(info->total_stops);
-  result["unique_stop_count"] = static_cast<int>(info->unique_stops);
-
-  return result;
+  builder
+    .Key("curvature"s)
+    .Value(info->fact_route_length / info->line_route_length)
+    .Key("route_length"s).Value(info->fact_route_length)
+    .Key("stop_count"s).Value(static_cast<int>(info->total_stops))
+    .Key("unique_stop_count"s).Value(static_cast<int>(info->unique_stops));
 }
 
-json::Dict PrintMap(const RequestHandler &handler) {
+void PrintMap(const RequestHandler &handler, json::Builder &builder) {
   using namespace std::string_literals;
 
   std::stringstream render;
   handler.RenderMap().Render(render);
 
-  return {{"map"s, render.str()}};
+  builder.Key("map"s).Value(render.str());
 }
 
 void ProcessQueries(json::Array &data, RequestHandler &handler,
-    std::ostream &out) {
+  std::ostream &out) {
   using namespace std::string_literals;
   using namespace std::string_view_literals;
 
-  json::Array output_json;
+  json::Builder json_builder;
 
+  json_builder.StartArray();
   for (const auto &req : data) {
-    json::Dict response;
     auto map_req = req.AsMap();
     auto type_stop = map_req.at("type"s);
     std::string name;
 
-    response["request_id"] = map_req.at("id"s).AsInt();
+    json_builder.StartDict()
+      .Key("request_id").Value(map_req.at("id"s).AsInt());
 
     if (type_stop == "Stop"s) {
       name = map_req.at("name"s).AsString();
-      response.merge(PrintStops(handler, name));
+      PrintStops(handler, name, json_builder);
     } else if (type_stop == "Bus"s) {
       name = map_req.at("name"s).AsString();
-      response.merge(PrintBuses(handler, name));
+      PrintBuses(handler, name, json_builder);
     } else if (type_stop == "Map"s) {
-      response.merge(PrintMap(handler));
+      PrintMap(handler, json_builder);
     }
 
-    output_json.push_back(response);
+    json_builder.EndDict();
   }
+  json_builder.EndArray();
 
-  json::Print(json::Document(output_json), out);
+  json::Print(json::Document(json_builder.Build()), out);
 }
 
 } // namespace printer
