@@ -30,4 +30,11 @@ RenderSettings ReadRenderSettings(const json::Dict &render_settings);
 
 } // namespace renderer
 
+namespace router {
+
+struct RoutingSettings;
+RoutingSettings ReadRoutingSettings(const json::Dict &router_settings);
+
+} // namespace router
+
 } // namespace tc

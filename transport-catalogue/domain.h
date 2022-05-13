@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,28 @@ struct Bus {
   std::string name;
   Route stops;
   Route final_stops;
+};
+
+struct BusInfo {
+  size_t total_stops{};
+  size_t unique_stops{};
+  double fact_route_length{};
+  double line_route_length{};
+};
+
+struct BusPtrComparator {
+  bool operator()(Bus *lhs, Bus *rhs) const;
+};
+
+using Buses = std::set<Bus *, BusPtrComparator>;
+
+struct Hasher {
+  static const size_t salt = 77;
+  static size_t CountStopHash(const Stop *stop);
+  static size_t CountRouteHash(const Route *route);
+  size_t operator()(const std::pair<Stop *, Stop *> &stops) const;
+  size_t operator()(const Bus *bus) const;
+  size_t operator()(const Stop *stop) const;
 };
 
 } // namespace tc

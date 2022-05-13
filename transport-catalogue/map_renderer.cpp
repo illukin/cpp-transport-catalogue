@@ -195,7 +195,7 @@ const svg::Color &Map::GetBusLineColor(size_t index) const {
 }
 
 bool Map::LexicSorterByName::operator()(Stop *lhs, Stop *rhs) const {
-    return lhs->name < rhs->name;
+  return lhs->name < rhs->name;
 }
 
 MapRenderer::MapRenderer(RenderSettings settings)

@@ -1,11 +1,13 @@
 #include "request_handler.h"
 #include "map_renderer.h"
 #include "transport_catalogue.h"
+#include "transport_router.h"
 
 namespace tc {
 
 RequestHandler::RequestHandler(const TransportCatalogue& db,
-  const renderer::MapRenderer& renderer) : db_(db), renderer_(renderer) {}
+  const renderer::MapRenderer& renderer, const router::Router& router)
+  : db_(db), renderer_(renderer), router_(router) {}
 
 std::optional<BusInfo>
 RequestHandler::GetBusInfo(const std::string_view &bus_name) const {
@@ -28,6 +30,19 @@ svg::Document RequestHandler::RenderMap() const {
   renderer_.RenderMap(buses.begin(), buses.end()).Draw(doc);
 
   return doc;
+}
+
+std::optional<router::RouteInfo>
+RequestHandler::FindRoute(std::string_view stop_name_from,
+  std::string_view stop_name_to) const {
+  const Stop *from = db_.GetStop(stop_name_from);
+  const Stop *to = db_.GetStop(stop_name_to);
+
+  if (from != nullptr && to != nullptr) {
+    return router_.FindRoute(from, to);
+  } else {
+    return std::nullopt;
+  }
 }
 
 } // namespace tc

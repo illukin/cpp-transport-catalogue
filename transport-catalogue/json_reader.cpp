@@ -3,9 +3,12 @@
 #include "json_builder.h"
 #include "request_handler.h"
 #include "transport_catalogue.h"
+#include "transport_router.h"
 
+#include <chrono>
 #include <map>
 #include <sstream>
+#include <variant>
 
 namespace tc {
 
@@ -132,6 +135,55 @@ void PrintBuses(const RequestHandler &handler, std::string &name,
     .Key("unique_stop_count"s).Value(static_cast<int>(info->unique_stops));
 }
 
+void BuildRouteItem(json::Builder &builder,
+  const router::RouteInfo::BusItem &item) {
+  using namespace std::string_literals;
+
+  builder.StartDict()
+    .Key("type"s).Value("Bus"s)
+    .Key("bus"s).Value(item.bus->name)
+    .Key("time"s).Value(item.time.count())
+    .Key("span_count"s).Value(static_cast<int>(item.span_count))
+    .EndDict();
+}
+void BuildRouteItem(json::Builder &builder,
+  const router::RouteInfo::WaitItem &item) {
+  using namespace std::string_literals;
+
+  builder.StartDict()
+    .Key("type"s).Value("Wait"s)
+    .Key("stop_name"s).Value(item.stop->name)
+    .Key("time"s).Value(item.time.count())
+    .EndDict();
+}
+
+void PrintRoute(const RequestHandler &handler, std::string &from,
+  std::string &to, json::Builder &builder) {
+  using namespace std::string_literals;
+
+  const auto route = handler.FindRoute(from, to);
+  if (!route.has_value()) {
+    builder.Key("error_message"s).Value("not found"s);
+    return;
+  }
+
+  builder
+    .Key("total_time"s).Value(route->total_time.count())
+    .Key("items"s).StartArray();
+
+  // Конструирования массива элементов, каждый из которых описывает непрерывную
+  // активность пассажира, требующую временных затрат
+  for (const auto &item : route->items) {
+    std::visit(
+      [&builder](const auto &item) {
+        BuildRouteItem(builder, item);
+      },
+      item);
+  }
+
+  builder.EndArray();
+}
+
 void PrintMap(const RequestHandler &handler, json::Builder &builder) {
   using namespace std::string_literals;
 
@@ -151,19 +203,23 @@ void ProcessQueries(json::Array &data, RequestHandler &handler,
   json_builder.StartArray();
   for (const auto &req : data) {
     auto map_req = req.AsMap();
-    auto type_stop = map_req.at("type"s);
-    std::string name;
+    auto req_type = map_req.at("type"s);
+    std::string name, from, to;
 
     json_builder.StartDict()
       .Key("request_id").Value(map_req.at("id"s).AsInt());
 
-    if (type_stop == "Stop"s) {
+    if (req_type == "Stop"s) {
       name = map_req.at("name"s).AsString();
       PrintStops(handler, name, json_builder);
-    } else if (type_stop == "Bus"s) {
+    } else if (req_type == "Bus"s) {
       name = map_req.at("name"s).AsString();
       PrintBuses(handler, name, json_builder);
-    } else if (type_stop == "Map"s) {
+    }else if (req_type == "Route"s) {
+      from = map_req.at("from"s).AsString();
+      to = map_req.at("to"s).AsString();
+      PrintRoute(handler, from, to, json_builder);
+    } else if (req_type == "Map"s) {
       PrintMap(handler, json_builder);
     }
 
@@ -234,5 +290,20 @@ RenderSettings ReadRenderSettings(const json::Dict &settings) {
 }
 
 } // namespace renderer
+
+namespace router {
+
+RoutingSettings ReadRoutingSettings(const json::Dict &settings) {
+  using namespace std::string_literals;
+
+  RoutingSettings rs;
+  auto bus_wait_time = settings.at("bus_wait_time"s).AsInt();
+  rs.bus_wait_time = std::chrono::minutes(bus_wait_time);
+  rs.bus_velocity = settings.at("bus_velocity"s).AsDouble();
+
+  return rs;
+}
+
+} // namespace router
 
 } // namespace tc

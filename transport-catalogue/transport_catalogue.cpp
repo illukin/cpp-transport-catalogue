@@ -5,36 +5,6 @@
 
 namespace tc {
 
-bool BusPtrComparator::operator()(Bus *lhs, Bus *rhs) const {
-  return *lhs < *rhs;
-}
-
-size_t Hasher::CountStopHash(const Stop *stop) {
-  return std::hash<std::string>{}(stop->name)
-    + std::hash<double>{}(stop->lat) * salt
-    + std::hash<double>{}(stop->lng) * salt * salt;
-}
-
-size_t Hasher::CountRouteHash(const Route *route) {
-  size_t hash = 0;
-
-  for (const auto r : *route) {
-    hash += CountStopHash(r);
-  }
-
-  return hash;
-}
-
-size_t Hasher::operator()(const std::pair<Stop *, Stop *> &stops) const {
-  return CountStopHash(stops.first) * salt
-    + CountStopHash(stops.second);
-}
-
-size_t Hasher::operator()(const Bus *bus) const {
-  return std::hash<std::string>{}(bus->name)
-    + CountRouteHash(&bus->stops) * salt;
-}
-
 void TransportCatalogue::AddStop(Stop stop) {
   auto &ref = stops_.emplace_back(std::move(stop.name),
     stop.lat, stop.lng);
@@ -139,6 +109,10 @@ const Buses &TransportCatalogue::GetBusesByStop(std::string_view name) const {
 
 const std::list<Bus> &TransportCatalogue::GetBuses() const {
   return buses_;
+}
+
+const std::list<Stop> &TransportCatalogue::GetStops() const {
+  return stops_;
 }
 
 } // namespace tc
