@@ -72,6 +72,11 @@ int TransportCatalogue::GetDistance(Stop *a, Stop *b) const {
   return it->second;
 }
 
+std::unordered_map<std::pair<Stop *, Stop *>, int, Hasher>
+TransportCatalogue::GetDistances() const {
+  return distances_;
+}
+
 Stop *TransportCatalogue::GetStop(const std::string_view name) const {
   auto it = name_to_stop_.find(name);
 

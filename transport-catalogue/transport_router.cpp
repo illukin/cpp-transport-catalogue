@@ -3,12 +3,12 @@
 
 namespace tc::router {
 
-Router::Router(RoutingSettings settings, const TransportCatalogue &cat)
+TransportRouter::TransportRouter(RoutingSettings settings, const TransportCatalogue &cat)
   : settings_(settings) {
   const auto &stops = cat.GetStops();
   const size_t vertex_count = stops.size() * 2;  // По две вершины на остановку
   graph_ = graph::DirectedWeightedGraph<Minutes>(vertex_count);
-  vertexes_.reserve(vertex_count);
+  vertexes_.resize(vertex_count);
 
   AddStopsToGraph(cat);
   AddBusesToGraph(cat);
@@ -16,8 +16,54 @@ Router::Router(RoutingSettings settings, const TransportCatalogue &cat)
   router_ = std::make_unique<graph::Router<Minutes>>(graph_);
 }
 
+void TransportRouter::UpdateRouterPtr() {
+  router_ = std::make_unique<graph::Router<Minutes>>(graph_);
+}
+
+const graph::DirectedWeightedGraph<Minutes> &TransportRouter::GetGraph() const {
+  return graph_;
+}
+
+graph::DirectedWeightedGraph<Minutes> &TransportRouter::GetGraph() {
+  return graph_;
+}
+
+const RoutingSettings &TransportRouter::GetRoutingSettings() const {
+  return settings_;
+}
+
+RoutingSettings &TransportRouter::GetRoutingSettings() {
+  return settings_;
+}
+
+const std::unordered_map<const Stop *, TransportRouter::StopVertexIds, Hasher> &
+TransportRouter::GetStopsVertexIds() const {
+  return stops_vertex_ids_;
+}
+
+std::unordered_map<const Stop *, TransportRouter::StopVertexIds, Hasher> &
+TransportRouter::GetStopsVertexIds() {
+  return stops_vertex_ids_;
+}
+
+const std::vector<const Stop *> &TransportRouter::GetVertexes() const {
+  return vertexes_;
+}
+
+std::vector<const Stop *> &TransportRouter::GetVertexes() {
+  return vertexes_;
+}
+
+const std::vector<TransportRouter::EdgeInfo> &TransportRouter::GetEdges() const {
+  return edges_;
+}
+
+std::vector<TransportRouter::EdgeInfo> &TransportRouter::GetEdges() {
+  return edges_;
+}
+
 std::optional<RouteInfo>
-Router::FindRoute(const Stop *from, const Stop *to) const {
+TransportRouter::FindRoute(const Stop *from, const Stop *to) const {
   const graph::VertexId vertex_from = stops_vertex_ids_.at(from).out;
   const graph::VertexId vertex_to = stops_vertex_ids_.at(to).out;
   const auto route = router_->BuildRoute(vertex_from, vertex_to);
@@ -51,7 +97,7 @@ Router::FindRoute(const Stop *from, const Stop *to) const {
   return route_info;
 }
 
-void Router::AddStopsToGraph(const TransportCatalogue &cat) {
+void TransportRouter::AddStopsToGraph(const TransportCatalogue &cat) {
   graph::VertexId vertex_id = 0;
   const auto &stops = cat.GetStops();
 
@@ -72,7 +118,7 @@ void Router::AddStopsToGraph(const TransportCatalogue &cat) {
   }
 }
 
-void Router::AddBusesToGraph(const TransportCatalogue &cat) {
+void TransportRouter::AddBusesToGraph(const TransportCatalogue &cat) {
   const auto &buses = cat.GetBuses();
 
   for (const auto &bus : buses) {

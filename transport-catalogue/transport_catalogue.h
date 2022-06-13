@@ -22,6 +22,8 @@ public:
   BusInfo GetBusInfo(Bus *bus) const;
   const Buses &GetBusesByStop(std::string_view name) const;
   int GetDistance(Stop *a, Stop *b) const;
+  std::unordered_map<std::pair<Stop *, Stop *>, int, Hasher>
+  GetDistances() const;
   const std::list<Bus> &GetBuses() const;
   const std::list<Stop> &GetStops() const;
 

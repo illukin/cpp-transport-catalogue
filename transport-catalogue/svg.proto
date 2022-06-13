@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package transport_catalogue;
+
+message Point {
+  double x = 1;
+  double y = 2;
+}
+
+message Str {
+  string value = 1;
+}
+
+message Rgb {
+  uint32 red = 1;
+  uint32 green = 2;
+  uint32 blue = 3;
+}
+
+message Rgba {
+  Rgb rgb = 1;
+  double opacity = 2;
+}
+
+message Color {
+  oneof color {
+    Str str = 1;
+    Rgb rgb = 2;
+    Rgba rgba = 3;
+  }
+}

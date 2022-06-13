@@ -40,13 +40,8 @@ struct RouteInfo {
   std::vector<Item> items;
 };
 
-class Router {
+class TransportRouter {
 public:
-  Router(RoutingSettings settings, const TransportCatalogue &cat);
-
-  std::optional<RouteInfo> FindRoute(const Stop *from, const Stop *to) const;
-
-private:
   struct StopVertexIds {
     graph::VertexId in;
     graph::VertexId out;
@@ -59,6 +54,31 @@ private:
 
   using EdgeInfo = std::optional<BusEdge>;
 
+  TransportRouter() = default;
+  TransportRouter(RoutingSettings settings, const TransportCatalogue &cat);
+
+  std::optional<RouteInfo> FindRoute(const Stop *from, const Stop *to) const;
+
+  void UpdateRouterPtr();
+
+  const graph::DirectedWeightedGraph<Minutes> &GetGraph() const;
+  graph::DirectedWeightedGraph<Minutes> &GetGraph();
+
+  const RoutingSettings &GetRoutingSettings() const;
+  RoutingSettings &GetRoutingSettings();
+
+  const std::unordered_map<const Stop *, StopVertexIds, Hasher> &
+  GetStopsVertexIds() const;
+  std::unordered_map<const Stop *, StopVertexIds, Hasher> &
+  GetStopsVertexIds();
+
+  const std::vector<const Stop *> &GetVertexes() const;
+  std::vector<const Stop *> &GetVertexes();
+
+  const std::vector<EdgeInfo> &GetEdges() const;
+  std::vector<EdgeInfo> &GetEdges();
+
+private:
   void AddStopsToGraph(const TransportCatalogue &cat);
   void AddBusesToGraph(const TransportCatalogue &cat);
 

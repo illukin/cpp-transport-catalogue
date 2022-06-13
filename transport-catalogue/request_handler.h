@@ -16,13 +16,14 @@ class MapRenderer;
 
 namespace router {
 struct RouteInfo;
-class Router;
+class TransportRouter;
 } // namespace router
 
 class RequestHandler {
 public:
   RequestHandler(const TransportCatalogue& db,
-    const renderer::MapRenderer &renderer, const router::Router &router);
+    const renderer::MapRenderer &renderer,
+    const router::TransportRouter &router);
 
   // Возвращает информацию о маршруте (запрос Bus)
   [[nodiscard]] std::optional<BusInfo>
@@ -43,7 +44,7 @@ public:
 private:
   const TransportCatalogue &db_;
   const renderer::MapRenderer &renderer_;
-  const router::Router &router_;
+  const router::TransportRouter &router_;
 };
 
 }  // namespace tc

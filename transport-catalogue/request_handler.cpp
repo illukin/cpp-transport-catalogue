@@ -6,7 +6,7 @@
 namespace tc {
 
 RequestHandler::RequestHandler(const TransportCatalogue& db,
-  const renderer::MapRenderer& renderer, const router::Router& router)
+  const renderer::MapRenderer& renderer, const router::TransportRouter& router)
   : db_(db), renderer_(renderer), router_(router) {}
 
 std::optional<BusInfo>

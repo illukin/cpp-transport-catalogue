@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+import "graph.proto";
+
+package router;
+
+message RoutingSettings {
+  uint32 bus_wait_time = 1;
+  double bus_velocity = 2;
+}
+
+message StopVertexIds {
+  uint32 in = 1;
+  uint32 out = 2;
+}
+
+message BusEdge {
+  string bus_name = 1;
+  uint32 span_count = 2;
+}
+
+message StopsVertexId {
+  string stop_name = 1;
+  StopVertexIds id = 2;
+}
+
+message Vertex {
+  string stop_name = 1;
+}
+
+message Edge {
+  oneof edge {
+    BusEdge bus_edge = 1;
+    bool nullopt = 2;
+  }
+}
+
+message Router {
+  RoutingSettings routing_settings = 1;
+  transport_catalogue.Graph graph = 2;
+  repeated StopsVertexId stops_vertex_id = 3;
+  repeated Vertex vertex = 4;
+  repeated Edge edge = 5;
+}
